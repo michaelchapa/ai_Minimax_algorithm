@@ -19,15 +19,17 @@ def ChessBoardSetup():
     return board
 
 def DrawBoard():
+    if DEBUG:
+        print("@ 0 1 2 3 4 5 6 7")
     for i in range(8):
+        if DEBUG:
+            print (i, end = " ")
         for j in range(8):
             print(board[i][j], end = " ")
         print()
     print()
 
 def MovePiece(x, y, u, v):
-    # write code to move the one chess piece
-    # this function will at least take the move (from-peice and to-piece) as input and return the new board layout
     if IsMoveLegal(x, y, u, v):
         board[u][v] = board[x][y]
         board[x][y] = "."
@@ -36,8 +38,6 @@ def MovePiece(x, y, u, v):
         print("Illegal move :P")
         
 def IsMoveLegal(x, y, u, v):
-  # return True if a move (from-piece and to-piece) is legal, else False
-  # this is the KEY function which contains the rules for each piece type
     whitePieces = ['r', 't', 'b', 'q', 'k', 'p']
     blackPieces = ['R', 'T', 'B', 'Q', 'K', 'P']
     fromPiece = board[x][y]
@@ -76,46 +76,65 @@ def IsMoveLegal(x, y, u, v):
     else: # going left
         srcY = v
         destY = y
-
-    if fromPiece in whitePieces: # Fighting down
+    
+    # White Pieces: (p)awn, (r)ook, knigh(t), (b)ishop, (q)ueen, (k)ing
+    if fromPiece in whitePieces: 
         if fromPiece == 'p' and IsClearPath(srcX, srcY, destX, destY) and x < u:
             return True
-        elif fromPiece == 'r' and IsClearPath(srcX, srcY, destX, destY):
-            # white rook logic
-            return True
-        elif fromPiece == 't':
-            # white knight logic
-            return True
-        elif fromPiece == 'b':
-            # white bishop logic
-            return True
-        elif fromPiece == 'q':
-            # white queen logic
-            return True
+        elif fromPiece == 'r' and IsClearPath(srcX, srcY, destX, destY) \
+            and RookMoves(srcX, srcY, destX, destY):
+            return True 
+        elif fromPiece == 't' and (destX, destY) in KnightMoves(srcX, srcY):
+            return True 
+        elif fromPiece == 'b' and IsClearPath(srcX, srcY, destX, destY):
+            return True 
+        elif fromPiece == 'q' and IsClearPath(srcX, srcY, destX, destY):
+            return True 
         elif fromPiece == 'k' and IsClearPath(srcX, srcY, destX, destY):
-            # white king logic
-            return True
+            return True 
     
-    elif fromPiece in blackPieces: # Fighting up
-        if fromPiece == 'P':
-        # white pawn logic
-            return True
-        elif fromPiece == 'R':
-        # white rook logic
-            return True
-        elif fromPiece == 'T':
-        # white knight logic
-            return True
-        elif fromPiece == 'B':
-        # white bishop logic
-            return True
-        elif fromPiece == 'Q':
-        # white queen logic
-            return True
-        elif fromPiece == 'K':
-        # white king logic
-            return True
+    # Black Pieces: (P)awn, (R)ook, knigh(T), (B)ishop, (Q)ueen, (K)ing
+    elif fromPiece in blackPieces: 
+        if fromPiece == 'P' and IsClearPath(srcX, srcY, destX, destY) and x > u:
+            return True 
+        elif fromPiece == 'R' and IsClearPath(srcX, srcY, destX, destY) \
+            and RookMoves(srcX, srcY, destX, destY):
+            return True 
+        elif fromPiece == 'T' and (destX, destY) in KnightMoves(srcX, srcY):
+            return True 
+        elif fromPiece == 'B' and IsClearPath(srcX, srcY, destX, destY):
+            return True 
+        elif fromPiece == 'Q' and IsClearPath(srcX, srcY, destX, destY):
+            return True 
+        elif fromPiece == 'K' and IsClearPath(srcX, srcY, destX, destY):
+            return True 
 
+    return False
+
+# Generates all 8 Knight moves, filters all out of bounds moves
+def KnightMoves(srcX, srcY): 
+    possibleMoves = []
+    possibleMoves.append((srcX - 2, srcY - 1))
+    possibleMoves.append((srcX - 2, srcY + 1))
+    possibleMoves.append((srcX + 2, srcY - 1))
+    possibleMoves.append((srcX + 2, srcY + 1))
+    possibleMoves.append((srcX - 1, srcY - 2))
+    possibleMoves.append((srcX + 1, srcY - 2))
+    possibleMoves.append((srcX - 1, srcY + 2))
+    possibleMoves.append((srcX + 1, srcY + 2))
+      
+    # Filter out of bounds moves; x == z[0], y == z[1]
+    possibleMoves = [z for z in possibleMoves if z[0] >= 0 
+                     if z[0] < 8 if z[1] >= 0 if z[1] < 8]
+    
+    return possibleMoves
+
+def RookMoves(srcX, srcY, destX, destY):
+    if (destX - srcX) > 0 and srcY == destY:
+        return True
+    if (destY - srcY) > 0 and srcX == destX: 
+        return True
+    print("FAIL")
     return False
 
 # def GetListOfLegalMoves():
@@ -141,11 +160,19 @@ def IsMoveLegal(x, y, u, v):
 def IsClearPath(srcX, srcY, destX, destY):
   # helper function to figure out if a move is legal for straight-line moves (rooks, bishops, queens, pawns)
   # returns True if the path is clear for a move (from-piece and to-piece), non-inclusive
-    for i in range(srcX, destX):
-        for j in range(srcY, destY):
-            if(board[i][j] != '.'):
+    if srcX == destX: # populate the list with one value for iteration
+        rangeX = [srcX]
+    else:
+        rangeX = [x for x in range(srcX + 1, destX)]
+    if srcY == destY: # populate the list with one value for iteration
+        rangeY = [srcY]
+    else:
+        rangeY = [y for y in range(srcY + 1, destY)]
+    
+    for x in rangeX:
+        for y in rangeY:
+            if(board[x][y] != '.'):
                 return False
-            # add if statement to check if the spots on the way are empty
     return True
 
 #def DoesMovePutPlayerInCheck():
@@ -154,5 +181,6 @@ def IsClearPath(srcX, srcY, destX, destY):
 
 # TEST MAIN()
 board = ChessBoardSetup()
-MovePiece(1, 0, 3, 0)
-MovePiece(0, 0, 5, 0)
+DEBUG = True
+DrawBoard()
+
